@@ -1,12 +1,38 @@
 {
-  "name": "electron-quick-start",
+  "name": "electron-update",
   "version": "1.0.0",
   "description": "A minimal Electron application",
   "main": "main.js",
+  "homepage": "https://github.com/yangheng/electron-update",
   "scripts": {
-    "start": "electron ."
+    "postinstall": "electron-builder install-app-deps",
+    "pack": "electron-builder --dir",
+    "release": "electron-builder",
+    "start": "electron --debug=5858 . "
   },
-  "repository": "https://github.com/electron/electron-quick-start",
+  "repository": "git@github.com:yangheng/electron-update.git",
+  "build": {
+    "appId": "org.develar.onshape",
+    "files": [
+      "main.js",
+      "menu.js",
+      "index.html"
+    ],
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "yangheng",
+        "repo": "electron-update"
+      }
+    ],
+    "linux": {
+      "category": "Graphics",
+      "target": [
+        "AppImage",
+        "deb"
+      ]
+    }
+  },
   "keywords": [
     "Electron",
     "quick",
@@ -17,6 +43,11 @@
   "author": "GitHub",
   "license": "CC0-1.0",
   "devDependencies": {
-    "electron": "~1.6.2"
+    "electron": "~1.6.2",
+    "electron-builder": "^19.54.0"
+  },
+  "dependencies": {
+    "electron-updater": "^2.20.1",
+    "electron-log": "2.2.14"
   }
 }

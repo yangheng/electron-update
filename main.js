@@ -1,4 +1,8 @@
 const electron = require('electron')
+const log = require('electron-log');
+const { autoUpdater } = require("electron-updater");
+const MenuBuilder = require('./menu')
+
 // Module to control application life.
 const app = electron.app
 // Module to create native browser window.
@@ -10,17 +14,43 @@ const url = require('url')
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let mainWindow
-
+autoUpdater.logger = log;
+autoUpdater.logger.transports.file.level = 'info';
+log.info('App starting...');
+function sendStatusToWindow(text) {
+  log.info(text);
+  mainWindow.webContents.send('message', text);
+}
 function createWindow () {
+  // 自动更新
+  autoUpdater.checkForUpdatesAndNotify();
   // Create the browser window.
   mainWindow = new BrowserWindow({width: 800, height: 600})
 
   // and load the index.html of the app.
-  mainWindow.loadURL(url.format({
-    pathname: path.join(__dirname, 'index.html'),
-    protocol: 'file:',
-    slashes: true
-  }))
+  mainWindow.loadURL(`file://${__dirname}/index.html#v${app.getVersion()}`);
+  
+  autoUpdater.on('checking-for-update', () => {
+    sendStatusToWindow('Checking for update...');
+  })
+  autoUpdater.on('update-available', (info) => {
+    sendStatusToWindow('Update available.');
+  })
+  autoUpdater.on('update-not-available', (info) => {
+    sendStatusToWindow('Update not available.');
+  })
+  autoUpdater.on('error', (err) => {
+    sendStatusToWindow('Error in auto-updater. ' + err);
+  })
+  autoUpdater.on('download-progress', (progressObj) => {
+    let log_message = "Download speed: " + progressObj.bytesPerSecond;
+    log_message = log_message + ' - Downloaded ' + progressObj.percent + '%';
+    log_message = log_message + ' (' + progressObj.transferred + "/" + progressObj.total + ')';
+    sendStatusToWindow(log_message);
+  })
+  autoUpdater.on('update-downloaded', (info) => {
+    sendStatusToWindow('Update downloaded');
+  });
 
   // Open the DevTools.
   // mainWindow.webContents.openDevTools()
@@ -32,12 +62,15 @@ function createWindow () {
     // when you should delete the corresponding element.
     mainWindow = null
   })
+  const menuBuilder = new MenuBuilder(mainWindow);
+  menuBuilder.buildMenu();
 }
 
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
 app.on('ready', createWindow)
+
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
@@ -55,6 +88,8 @@ app.on('activate', function () {
     createWindow()
   }
 })
-
+app.on('ready', function () {
+  autoUpdater.checkForUpdatesAndNotify();
+});
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
